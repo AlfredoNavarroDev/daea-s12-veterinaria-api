@@ -137,8 +137,195 @@ Content-Type: application/json
   "propietarioId": 3
 }
 
-### Mascotas - eliminar existente (204)
+### Mascotas - eliminar con citas registradas (409)
 DELETE {{Lab12_HostAddress}}/api/mascotas/4
+
+### Mascotas - eliminar sin citas (204)
+DELETE {{Lab12_HostAddress}}/api/mascotas/7
 
 ### Mascotas - eliminar inexistente (404)
 DELETE {{Lab12_HostAddress}}/api/mascotas/999
+
+### Veterinarios - listar todos (200)
+GET {{Lab12_HostAddress}}/api/veterinarios
+Accept: application/json
+
+### Veterinarios - detalle existente (200)
+GET {{Lab12_HostAddress}}/api/veterinarios/1
+Accept: application/json
+
+### Veterinarios - detalle inexistente (404)
+GET {{Lab12_HostAddress}}/api/veterinarios/999
+Accept: application/json
+
+### Veterinarios - crear valido (201)
+POST {{Lab12_HostAddress}}/api/veterinarios
+Content-Type: application/json
+
+{
+  "nombres": "Lucia",
+  "apellidos": "Reyes",
+  "licencia": "CMVP0004",
+  "especialidad": "Odontologia",
+  "telefono": "987666777"
+}
+
+### Veterinarios - crear con licencia en formato invalido (400)
+POST {{Lab12_HostAddress}}/api/veterinarios
+Content-Type: application/json
+
+{
+  "nombres": "Test",
+  "apellidos": "Test",
+  "licencia": "abc"
+}
+
+### Veterinarios - crear con licencia duplicada (409)
+POST {{Lab12_HostAddress}}/api/veterinarios
+Content-Type: application/json
+
+{
+  "nombres": "Otro",
+  "apellidos": "Duplicado",
+  "licencia": "CMVP0001"
+}
+
+### Veterinarios - actualizar valido (204)
+PUT {{Lab12_HostAddress}}/api/veterinarios/2
+Content-Type: application/json
+
+{
+  "id": 2,
+  "nombres": "Patricia",
+  "apellidos": "Vargas Soto",
+  "licencia": "CMVP0002",
+  "especialidad": "Cirugia",
+  "telefono": "987444555"
+}
+
+### Veterinarios - actualizar con id de ruta distinto al del cuerpo (400)
+PUT {{Lab12_HostAddress}}/api/veterinarios/2
+Content-Type: application/json
+
+{
+  "id": 99,
+  "nombres": "Patricia",
+  "apellidos": "Vargas",
+  "licencia": "CMVP0002"
+}
+
+### Veterinarios - eliminar con citas registradas (409)
+DELETE {{Lab12_HostAddress}}/api/veterinarios/1
+
+### Veterinarios - eliminar sin citas (204)
+DELETE {{Lab12_HostAddress}}/api/veterinarios/3
+
+### Citas - listar todas (200)
+GET {{Lab12_HostAddress}}/api/citas
+Accept: application/json
+
+### Citas - filtrar por veterinarioId via query string (200)
+GET {{Lab12_HostAddress}}/api/citas?veterinarioId=1
+Accept: application/json
+
+### Citas - filtrar por mascotaId via query string (200)
+GET {{Lab12_HostAddress}}/api/citas?mascotaId=1
+Accept: application/json
+
+### Citas - detalle existente (200)
+GET {{Lab12_HostAddress}}/api/citas/1
+Accept: application/json
+
+### Citas - detalle inexistente (404)
+GET {{Lab12_HostAddress}}/api/citas/999
+Accept: application/json
+
+### Citas - ruta anidada por mascota existente (200)
+GET {{Lab12_HostAddress}}/api/mascotas/1/citas
+Accept: application/json
+
+### Citas - ruta anidada por mascota inexistente (404)
+GET {{Lab12_HostAddress}}/api/mascotas/999/citas
+Accept: application/json
+
+### Citas - ruta anidada por veterinario existente (200)
+GET {{Lab12_HostAddress}}/api/veterinarios/1/citas
+Accept: application/json
+
+### Citas - ruta anidada por veterinario inexistente (404)
+GET {{Lab12_HostAddress}}/api/veterinarios/999/citas
+Accept: application/json
+
+### Citas - crear valida (201)
+POST {{Lab12_HostAddress}}/api/citas
+Content-Type: application/json
+
+{
+  "fechaHora": "2026-11-15T10:00:00",
+  "motivo": "Consulta de rutina",
+  "mascotaId": 1,
+  "veterinarioId": 2
+}
+
+### Citas - crear con mascota inexistente (400)
+POST {{Lab12_HostAddress}}/api/citas
+Content-Type: application/json
+
+{
+  "fechaHora": "2026-11-16T10:00:00",
+  "motivo": "Test",
+  "mascotaId": 999,
+  "veterinarioId": 1
+}
+
+### Citas - crear con veterinario inexistente (400)
+POST {{Lab12_HostAddress}}/api/citas
+Content-Type: application/json
+
+{
+  "fechaHora": "2026-11-16T10:00:00",
+  "motivo": "Test",
+  "mascotaId": 1,
+  "veterinarioId": 999
+}
+
+### Citas - crear con horario ocupado del veterinario (409)
+POST {{Lab12_HostAddress}}/api/citas
+Content-Type: application/json
+
+{
+  "fechaHora": "2026-11-10T09:00:00",
+  "motivo": "Otra cita",
+  "mascotaId": 4,
+  "veterinarioId": 1
+}
+
+### Citas - actualizar valida (204)
+PUT {{Lab12_HostAddress}}/api/citas/2
+Content-Type: application/json
+
+{
+  "id": 2,
+  "fechaHora": "2026-11-10T10:30:00",
+  "motivo": "Vacuna antirrabica (reprogramada)",
+  "mascotaId": 2,
+  "veterinarioId": 1
+}
+
+### Citas - actualizar con id de ruta distinto al del cuerpo (400)
+PUT {{Lab12_HostAddress}}/api/citas/2
+Content-Type: application/json
+
+{
+  "id": 99,
+  "fechaHora": "2026-11-10T10:30:00",
+  "motivo": "x",
+  "mascotaId": 2,
+  "veterinarioId": 1
+}
+
+### Citas - eliminar existente (204)
+DELETE {{Lab12_HostAddress}}/api/citas/2
+
+### Citas - eliminar inexistente (404)
+DELETE {{Lab12_HostAddress}}/api/citas/999

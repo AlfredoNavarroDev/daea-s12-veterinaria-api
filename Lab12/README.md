@@ -1,21 +1,25 @@
 # Lab12 - API Veterinaria
 
-Web API REST con ASP.NET Core 10 + Entity Framework Core (Database First) para el curso DAEA (TECSUP), Semana 12. Dominio: gestion de propietarios y sus mascotas en una veterinaria.
+Web API REST con ASP.NET Core 10 + Entity Framework Core (Database First) para el curso DAEA (TECSUP), Semana 12. Dominio: gestion de propietarios, sus mascotas, los veterinarios y las citas de una veterinaria.
 
 ## Que problema resuelve
 
-Una veterinaria necesita registrar a sus clientes (propietarios) y las mascotas que atiende, de forma que cada mascota quede asociada a un unico propietario. La API expone el CRUD de ambas entidades, permite filtrar mascotas por especie o por propietario, y consultar las mascotas de un propietario especifico mediante una ruta anidada.
+Una veterinaria necesita registrar a sus clientes (propietarios), las mascotas que atiende (cada una de un unico propietario), su plantel de veterinarios, y las citas que agendan (cada cita es de una mascota con un veterinario). La API expone el CRUD de las cuatro entidades, filtros por query string, rutas anidadas, y valida reglas de negocio que una Data Annotation no puede expresar (duplicados, referencias inexistentes, dependientes, choques de horario).
 
-## Entidades y relacion
+## Entidades y relaciones
 
 - **Propietario** (1): `Id`, `Nombres`, `Apellidos`, `Dni` (8 digitos, unico), `Telefono`, `Email`, `Direccion`.
-- **Mascota** (N): `Id`, `Nombre`, `Especie`, `Raza`, `FechaNacimiento`, `PropietarioId` (clave foranea).
-- Relacion 1:N: un Propietario tiene muchas Mascotas. La propiedad de navegacion `Mascota.Propietario` es nula (`Propietario?`) para que el POST de una mascota solo necesite enviar `PropietarioId`. La coleccion `Propietario.Mascotas` tiene `[JsonIgnore]` para evitar el ciclo de serializacion JSON sin usar DTOs.
+- **Mascota** (N de Propietario): `Id`, `Nombre`, `Especie`, `Raza`, `FechaNacimiento`, `PropietarioId` (clave foranea).
+- **Veterinario** (1): `Id`, `Nombres`, `Apellidos`, `Licencia` (formato `CMVP0001`, unica), `Especialidad`, `Telefono`.
+- **Cita** (N de Mascota y N de Veterinario a la vez): `Id`, `FechaHora`, `Motivo`, `MascotaId`, `VeterinarioId`.
+- Dos relaciones 1:N: Propietario -> Mascotas, y Mascota/Veterinario -> Citas (Cita tiene dos claves foraneas). Las propiedades de navegacion del lado "hijo" (`Mascota.Propietario`, `Cita.Mascota`, `Cita.Veterinario`) son nulas (`Tipo?`) para que el POST solo necesite enviar el id de la clave foranea. Las colecciones del lado "padre" (`Propietario.Mascotas`, `Mascota.Citas`, `Veterinario.Citas`) tienen `[JsonIgnore]` para evitar el ciclo de serializacion JSON sin usar DTOs.
 
 ## Reglas de negocio (409 Conflict)
 
-1. **DNI duplicado**: crear o editar un Propietario con un DNI que ya existe en otro registro devuelve `409`.
-2. **Eliminar con dependientes**: eliminar un Propietario que tiene Mascotas registradas devuelve `409` (no se permite dejar mascotas huerfanas).
+1. **DNI duplicado**: crear o editar un Propietario con un DNI que ya existe en otro registro.
+2. **Licencia duplicada**: crear o editar un Veterinario con una Licencia que ya existe en otro registro.
+3. **Horario ocupado**: crear o editar una Cita con el mismo Veterinario y la misma FechaHora que otra Cita existente.
+4. **Eliminar con dependientes**: eliminar un Propietario con Mascotas, una Mascota con Citas, o un Veterinario con Citas, devuelve `409` (no se permite dejar registros huerfanos).
 
 ## Estructura del proyecto
 
@@ -23,14 +27,19 @@ Una veterinaria necesita registrar a sus clientes (propietarios) y las mascotas 
 Lab12/
 ├── Controllers/
 │   ├── PropietariosController.cs   CRUD de Propietarios
-│   └── MascotasController.cs       CRUD de Mascotas + filtro + ruta anidada
+│   ├── MascotasController.cs       CRUD de Mascotas + filtro + ruta anidada
+│   ├── VeterinariosController.cs   CRUD de Veterinarios
+│   └── CitasController.cs          CRUD de Citas + filtros + 2 rutas anidadas
 ├── Models/
 │   ├── Propietario.cs              Entidad con Data Annotations
-│   └── Mascota.cs                  Entidad con Data Annotations
+│   ├── Mascota.cs                  Entidad con Data Annotations
+│   ├── Veterinario.cs              Entidad con Data Annotations
+│   └── Cita.cs                     Entidad con Data Annotations
 ├── Data/
 │   └── VeterinariaContext.cs       DbContext (generado con Scaffold-DbContext)
 ├── Database/
-│   └── create_veterinaria.sql      Script de creacion + datos de ejemplo (BD primero)
+│   ├── create_veterinaria.sql        Script local (BD primero)
+│   └── create_veterinaria_cloud.sql  Mismo script, sin CREATE DATABASE/USE (hosting)
 ├── Program.cs                      DI del DbContext, CORS, Swagger
 ├── appsettings.json / appsettings.Development.json
 └── README.md
@@ -52,9 +61,21 @@ No hay capa de repositorios: los controladores inyectan `VeterinariaContext` dir
 | GET | `/api/propietarios/{propietarioId}/mascotas` | Ruta anidada: mascotas de un propietario | 200, 404 |
 | POST | `/api/mascotas` | Crea una mascota | 201, 400 |
 | PUT | `/api/mascotas/{id}` | Actualiza una mascota | 204, 400, 404 |
-| DELETE | `/api/mascotas/{id}` | Elimina una mascota | 204, 404 |
+| DELETE | `/api/mascotas/{id}` | Elimina una mascota | 204, 404, 409 |
+| GET | `/api/veterinarios` | Lista todos los veterinarios | 200 |
+| GET | `/api/veterinarios/{id}` | Detalle de un veterinario | 200, 404 |
+| POST | `/api/veterinarios` | Crea un veterinario | 201, 400, 409 |
+| PUT | `/api/veterinarios/{id}` | Actualiza un veterinario | 204, 400, 404, 409 |
+| DELETE | `/api/veterinarios/{id}` | Elimina un veterinario | 204, 404, 409 |
+| GET | `/api/citas?mascotaId=&veterinarioId=` | Lista citas, filtrable por query string | 200 |
+| GET | `/api/citas/{id}` | Detalle de una cita | 200, 404 |
+| GET | `/api/mascotas/{mascotaId}/citas` | Ruta anidada: citas de una mascota | 200, 404 |
+| GET | `/api/veterinarios/{veterinarioId}/citas` | Ruta anidada: citas de un veterinario | 200, 404 |
+| POST | `/api/citas` | Crea una cita | 201, 400, 409 |
+| PUT | `/api/citas/{id}` | Actualiza una cita | 204, 400, 404, 409 |
+| DELETE | `/api/citas/{id}` | Elimina una cita | 204, 404 |
 
-11 endpoints en total (minimo pedido: 10).
+22 endpoints en total (minimo pedido: 10).
 
 ## Base de datos (Database First)
 
@@ -68,7 +89,7 @@ dotnet tool install --global dotnet-ef
 dotnet ef dbcontext scaffold "Server=localhost\SQLEXPRESS;Database=VeterinariaDB;Trusted_Connection=True;TrustServerCertificate=True" Microsoft.EntityFrameworkCore.SqlServer -o Models -c VeterinariaContext --context-dir Data --data-annotations
 ```
 
-Tras el scaffold se ajustaron a mano: Data Annotations adicionales (`[Required]`, `[RegularExpression]`, `[EmailAddress]`, `[Phone]`), navegacion `Propietario?` nula en `Mascota`, `[JsonIgnore]` en la coleccion de `Propietario`, y se removio la cadena de conexion embebida en `VeterinariaContext` (ahora se inyecta por configuracion en `Program.cs`).
+Cuando el esquema evoluciona (se agrego `Veterinarios`/`Citas` despues de la primera version), el flujo es: actualizar el script SQL, correrlo, y repetir el scaffold con `--force` para regenerar los 4 modelos desde cero. Tras cada scaffold se ajustan a mano: Data Annotations adicionales (`[Required]`, `[RegularExpression]`, `[EmailAddress]`, `[Phone]`), navegacion nula (`Tipo?`) en el lado "hijo" de cada relacion, `[JsonIgnore]` en las colecciones del lado "padre", y se remueve la cadena de conexion embebida en `VeterinariaContext` (se inyecta por configuracion en `Program.cs`).
 
 ## Comandos usados (orden real)
 
