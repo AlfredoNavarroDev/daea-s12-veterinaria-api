@@ -7,7 +7,9 @@ API REST ASP.NET Core 10 con EF Core (Database First). No hay capa de repositori
 | Unidad | Archivo(s) | Descripcion |
 |---|---|---|
 | [propietarios](./propietarios/) | `Controllers/PropietariosController.cs`, `Models/Propietario.cs` | CRUD de propietarios, regla de DNI unico y bloqueo de borrado con mascotas dependientes |
-| [mascotas](./mascotas/) | `Controllers/MascotasController.cs`, `Models/Mascota.cs` | CRUD de mascotas, filtro por query string, ruta anidada bajo `/api/propietarios/{id}/mascotas` |
+| [mascotas](./mascotas/) | `Controllers/MascotasController.cs`, `Models/Mascota.cs` | CRUD de mascotas, filtro por query string, ruta anidada bajo `/api/propietarios/{id}/mascotas`, bloqueo de borrado con citas dependientes |
+| [veterinarios](./veterinarios/) | `Controllers/VeterinariosController.cs`, `Models/Veterinario.cs` | CRUD de veterinarios, regla de licencia unica y bloqueo de borrado con citas dependientes |
+| [citas](./citas/) | `Controllers/CitasController.cs`, `Models/Cita.cs` | CRUD de citas (dos FK: mascota y veterinario), filtros por query string, dos rutas anidadas, regla de horario ocupado |
 
 ## Convenciones compartidas
 

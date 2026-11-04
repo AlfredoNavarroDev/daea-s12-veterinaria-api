@@ -29,4 +29,8 @@ El body solo necesita `PropietarioId` (no un objeto `Propietario` completo) porq
 4. `Entry(mascota).State = EntityState.Modified` + `SaveChangesAsync()` → `NoContent()` (`204`).
 
 ## DELETE /api/mascotas/{id}
-`FindAsync(id)` → `404` si `null`; si no, `Remove` + `SaveChangesAsync()` → `NoContent()` (`204`). A diferencia de `Propietario`, `Mascota` no tiene entidades dependientes, asi que no hay chequeo de negocio adicional aqui.
+1. `FindAsync(id)` → `404` si `null`.
+2. `_context.Citas.AnyAsync(c => c.MascotaId == id)` — si la mascota tiene al menos una cita → `Conflict(...)` (`409`), **no se elimina**.
+3. Si no tiene citas: `Remove` + `SaveChangesAsync()` → `NoContent()` (`204`).
+
+Este chequeo se agregó cuando se introdujo `Cita` (`Controllers/MascotasController.cs`): antes `Mascota` no tenía entidades dependientes, así que `DeleteMascota` borraba directo. Sin el chequeo, intentar borrar una mascota con citas haría que `SaveChangesAsync()` lance una `DbUpdateException` sin manejar (la FK `FK_Citas_Mascotas` no tiene `ON DELETE CASCADE`) — un `500`, no el `409` limpio que da ahora.

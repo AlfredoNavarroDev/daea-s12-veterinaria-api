@@ -11,3 +11,6 @@ R: Porque lo que devuelve son objetos `Mascota` (mismo tipo que el resto del con
 
 **P: El filtro `especie` en `GET /api/mascotas?especie=Perro`, ¿es case-insensitive?**
 R: Sí, pero no por el código C# — es `.Where(m => m.Especie == especie)` traducido a SQL, y la collation de `VeterinariaDB` es `Modern_Spanish_CI_AS` (CI = case-insensitive), así que "perro" en minúsculas sí matchea "Perro" en la base. Si se cambiara la collation a `_CS` (case-sensitive), este mismo filtro dejaría de matchear sin tocar el controlador (`Controllers/MascotasController.cs` → `GetMascotas`).
+
+**P: ¿Por qué `DeleteMascota` ahora chequea `Citas` antes de borrar, si `Mascota` nunca tuvo esa validación?**
+R: Porque dejó de ser cierto que `Mascota` no tiene dependientes: desde que existe `Cita` (con `MascotaId` como FK obligatoria), borrar una mascota con citas agendadas rompería esa FK. El chequeo (`_context.Citas.AnyAsync(c => c.MascotaId == id)` → `409`) se agregó junto con `Cita` para evitar que `SaveChangesAsync()` lanzara una excepción de BD sin manejar (`Controllers/MascotasController.cs` → `DeleteMascota`). Mismo patrón que `Propietario` ya tenía con `Mascotas`.
