@@ -130,6 +130,12 @@ public class MascotasController : ControllerBase
             return NotFound();
         }
 
+        var tieneCitas = await _context.Citas.AnyAsync(c => c.MascotaId == id);
+        if (tieneCitas)
+        {
+            return Conflict(new { mensaje = "No se puede eliminar: la mascota tiene citas registradas." });
+        }
+
         _context.Mascotas.Remove(mascota);
         await _context.SaveChangesAsync();
 
