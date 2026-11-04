@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 
 namespace Lab12.Models;
@@ -26,6 +27,10 @@ public partial class Mascota
 
     [Required]
     public int PropietarioId { get; set; }
+
+    [JsonIgnore]
+    [InverseProperty("Mascota")]
+    public virtual ICollection<Cita> Citas { get; set; } = new List<Cita>();
 
     [ForeignKey("PropietarioId")]
     [InverseProperty("Mascotas")]
