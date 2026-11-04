@@ -123,21 +123,22 @@ En `appsettings.json` (lo que se publica) la cadena queda vacia; en produccion s
 
 ## Despliegue en la nube
 
-Proveedor elegido: **MonsterASP.NET** (hosting ASP.NET Core + MSSQL en el mismo panel, plan gratuito, soporta .NET 8-11). Se justifica porque evita mezclar dos proveedores distintos para API y BD, y el flujo de publicacion es nativo de Visual Studio (Web Deploy), sin tocar Docker ni YAML de CI/CD.
+Proveedor elegido: **MonsterASP.NET** (hosting ASP.NET Core + MSSQL en el mismo panel, plan gratuito, soporta .NET 8-11). Se justifica porque evita mezclar dos proveedores distintos para API y BD, el certificado HTTPS (Let's Encrypt) lo emite y renueva el propio panel, y el deploy se automatiza con GitHub Actions via WebDeploy sin depender de publicar a mano desde Visual Studio.
 
-### Pasos
+- **API**: https://daea12.runasp.net (Swagger en `/swagger`)
+- **Base de datos**: MSSQL `db78015` en el mismo proveedor
 
-1. **Crear el sitio** en el Panel de Control de MonsterASP.NET, eligiendo .NET 10 como version del framework.
-2. **Crear la base MSSQL** desde el panel (Databases). El panel asigna su propio nombre de base y usuario; no hace falta que coincida con `VeterinariaDB`.
-3. **Cargar el esquema**: correr `Database/create_veterinaria_cloud.sql` (sin `CREATE DATABASE`/`USE`, a diferencia del script local) contra esa base, via el editor T-SQL del panel, WebMSSQL o SSMS (host, usuario y password estan en Databases -> la base -> Users -> Remote access).
-4. **Configurar la cadena de conexion**: en el sitio -> Scripting -> Environment variables, agregar `ConnectionStrings__VeterinariaDb` con la cadena de conexion **local** que da el panel para esa base (no la de acceso remoto). El doble guion bajo (`__`) es la convencion que ASP.NET Core usa para mapear a `ConnectionStrings:VeterinariaDb` en `appsettings.json`; no hace falta tocar el codigo.
-5. Opcional: agregar tambien `Cors__AllowedOrigin` si el origen final difiere del placeholder `https://localhost:4200` en `appsettings.json`.
-6. **Habilitar WebDeploy** (sitio -> Deploy -> tarjeta de acceso Visual Studio) y descargar el `.publishSettings`.
-7. **Publicar desde Visual Studio**: boton derecho sobre el proyecto -> Publish -> Import profile -> seleccionar el `.publishSettings` descargado -> Publish. En la pantalla de publish, las secciones "Database"/"Entity Framework Migrations" se pueden dejar vacias (no se usan migraciones, el modelo es Database First).
-8. Reiniciar el sitio tras guardar la variable de entorno (los cambios aplican en el siguiente arranque de la app).
-9. Verificar `https://<tu-sitio>.monsterasp.net/swagger` y repetir las pruebas de `Lab12.http` contra esa URL (no localhost).
+### Pasos realizados
 
-Enlace de la API publicada y capturas de las pruebas: pendientes hasta completar el deploy.
+1. Crear el sitio en el Panel de Control de MonsterASP.NET (.NET 10, HTTPS habilitado).
+2. Crear la base MSSQL desde el panel (Databases). El panel asigna su propio nombre de base y usuario, no `VeterinariaDB`.
+3. Cargar el esquema: correr `Database/create_veterinaria_cloud.sql` (sin `CREATE DATABASE`/`USE`) contra esa base.
+4. Configurar la cadena de conexion: sitio -> Scripting -> Environment variables -> `ConnectionStrings__VeterinariaDb` con la cadena **local** de la base (host sin `.public.`, uso interno dentro del hosting). El doble guion bajo (`__`) es la convencion de ASP.NET Core para mapear a `ConnectionStrings:VeterinariaDb`; no hace falta tocar codigo. `appsettings.json` nunca tiene la cadena real, solo `""`.
+5. Emitir el certificado HTTPS (Let's Encrypt) desde sitio -> HTTPS / SSL certificates -> Enable HTTPS, y activar "Force redirect to HTTPS". Tarda unos minutos en propagar tras emitirse.
+6. **CI/CD con GitHub Actions** en vez de publicar a mano: `.github/workflows/publish.yml` compila, publica (`dotnet publish -r win-x86 --self-contained false`) y despliega por WebDeploy con la accion `rasmusbuchholdt/simply-web-deploy@2.1.0` en cada push a `main`. Los 4 valores de WebDeploy (sitio -> Deploy -> tarjeta "Visual Studio access": Site, Server+Port, Login, Password) se guardan como GitHub Secrets (`WEBSITE_NAME`, `SERVER_COMPUTER_NAME`, `SERVER_USERNAME`, `SERVER_PASSWORD`), nunca en el repo.
+7. Verificado: los 22 endpoints de `Lab12.http` contra `https://daea12.runasp.net`, todos los codigos (200, 201, 204, 400, 404, 409) y el header CORS correctos.
+
+Repositorio: https://github.com/AlfredoNavarroDev/daea-s12-veterinaria-api
 
 ## Pruebas
 
