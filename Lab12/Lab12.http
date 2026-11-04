@@ -1,0 +1,144 @@
+@Lab12_HostAddress = http://localhost:5125
+
+### Propietarios - listar todos (200)
+GET {{Lab12_HostAddress}}/api/propietarios
+Accept: application/json
+
+### Propietarios - detalle existente (200)
+GET {{Lab12_HostAddress}}/api/propietarios/1
+Accept: application/json
+
+### Propietarios - detalle inexistente (404)
+GET {{Lab12_HostAddress}}/api/propietarios/999
+Accept: application/json
+
+### Propietarios - crear valido (201)
+POST {{Lab12_HostAddress}}/api/propietarios
+Content-Type: application/json
+
+{
+  "nombres": "Pedro",
+  "apellidos": "Lopez",
+  "dni": "40000001",
+  "telefono": "987000111",
+  "email": "pedro.lopez@example.com",
+  "direccion": "Av. Central 100, Lima"
+}
+
+### Propietarios - crear con datos invalidos, falta Nombres (400)
+POST {{Lab12_HostAddress}}/api/propietarios
+Content-Type: application/json
+
+{
+  "apellidos": "Test",
+  "dni": "99999999"
+}
+
+### Propietarios - crear con DNI duplicado (409)
+POST {{Lab12_HostAddress}}/api/propietarios
+Content-Type: application/json
+
+{
+  "nombres": "Otro",
+  "apellidos": "Duplicado",
+  "dni": "45123456"
+}
+
+### Propietarios - actualizar valido (204)
+PUT {{Lab12_HostAddress}}/api/propietarios/3
+Content-Type: application/json
+
+{
+  "id": 3,
+  "nombres": "Ana",
+  "apellidos": "Torres Vega",
+  "dni": "42345678",
+  "telefono": "987333444",
+  "email": "ana.torres@example.com",
+  "direccion": "Calle Sol 789, Arequipa"
+}
+
+### Propietarios - actualizar con id de ruta distinto al del cuerpo (400)
+PUT {{Lab12_HostAddress}}/api/propietarios/3
+Content-Type: application/json
+
+{
+  "id": 99,
+  "nombres": "Ana",
+  "apellidos": "Torres",
+  "dni": "42345678"
+}
+
+### Propietarios - eliminar propietario con mascotas (409)
+DELETE {{Lab12_HostAddress}}/api/propietarios/1
+
+### Propietarios - eliminar propietario sin mascotas (204)
+DELETE {{Lab12_HostAddress}}/api/propietarios/5
+
+### Mascotas - listar todas (200)
+GET {{Lab12_HostAddress}}/api/mascotas
+Accept: application/json
+
+### Mascotas - filtrar por especie via query string (200)
+GET {{Lab12_HostAddress}}/api/mascotas?especie=Perro
+Accept: application/json
+
+### Mascotas - filtrar por propietarioId via query string (200)
+GET {{Lab12_HostAddress}}/api/mascotas?propietarioId=3
+Accept: application/json
+
+### Mascotas - detalle existente (200)
+GET {{Lab12_HostAddress}}/api/mascotas/1
+Accept: application/json
+
+### Mascotas - detalle inexistente (404)
+GET {{Lab12_HostAddress}}/api/mascotas/999
+Accept: application/json
+
+### Mascotas - ruta anidada por propietario existente (200)
+GET {{Lab12_HostAddress}}/api/propietarios/2/mascotas
+Accept: application/json
+
+### Mascotas - ruta anidada por propietario inexistente (404)
+GET {{Lab12_HostAddress}}/api/propietarios/999/mascotas
+Accept: application/json
+
+### Mascotas - crear valida (201)
+POST {{Lab12_HostAddress}}/api/mascotas
+Content-Type: application/json
+
+{
+  "nombre": "Firulais",
+  "especie": "Perro",
+  "raza": "Mestizo",
+  "fechaNacimiento": "2023-04-10",
+  "propietarioId": 2
+}
+
+### Mascotas - crear con propietario inexistente (400)
+POST {{Lab12_HostAddress}}/api/mascotas
+Content-Type: application/json
+
+{
+  "nombre": "Fantasma",
+  "especie": "Gato",
+  "propietarioId": 999
+}
+
+### Mascotas - actualizar valida (204)
+PUT {{Lab12_HostAddress}}/api/mascotas/4
+Content-Type: application/json
+
+{
+  "id": 4,
+  "nombre": "Michi",
+  "especie": "Gato",
+  "raza": "Comun Europeo",
+  "propietarioId": 3
+}
+
+### Mascotas - eliminar existente (204)
+DELETE {{Lab12_HostAddress}}/api/mascotas/4
+
+### Mascotas - eliminar inexistente (404)
+DELETE {{Lab12_HostAddress}}/api/mascotas/999
